@@ -1,3 +1,11 @@
+server:
+  port: 9999
 spring:
   application:
     name: rinha-backend-2025
+http:
+  config:
+    default-payment-processor:
+      base-url: http://payment-processor-default:8080
+    fallback-payment-processor:
+      base-url: http://payment-processor-fallback:8080

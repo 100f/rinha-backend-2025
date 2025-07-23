@@ -1,0 +1,6 @@
+http:
+  config:
+    default-payment-processor:
+      base-url: http://localhost:8001
+    fallback-payment-processor:
+      base-url: http://localhost:8002
