@@ -1,4 +1,4 @@
-package dev.cemf.rinha_backend_2025.config.http;
+package dev.cemf.rinha_backend_2025.config.http.client;
 
 import dev.cemf.rinha_backend_2025.http.client.AbstractPaymentProcessorHttpClient;
 import org.springframework.http.HttpHeaders;
