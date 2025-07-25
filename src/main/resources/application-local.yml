@@ -4,3 +4,6 @@ http:
       base-url: http://localhost:8001
     fallback-payment-processor:
       base-url: http://localhost:8002
+config:
+  key-db:
+    uri: redis://localhost:6379
