@@ -8,6 +8,7 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class PaymentSummaryAsyncHandler implements HandlerFunction<ServerResponse> {
+
     @Override
     public Mono<ServerResponse> handle(ServerRequest request) {
         return ServerResponse.accepted().build();
