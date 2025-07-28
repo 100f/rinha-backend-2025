@@ -17,7 +17,7 @@ public class RegisterPaymentAsyncHandler implements HandlerFunction<ServerRespon
     private final long publisherTimeoutInMs;
     private final RedisReactiveCommands<String, String> commands;
 
-    public RegisterPaymentAsyncHandler(@Value("${config.key-db.queue.pending-registration-payments.name}") String paymentsQueueName,
+    public RegisterPaymentAsyncHandler(@Value("${config.key-db.queue.pending-registration-payments.key}") String paymentsQueueName,
                                        @Value("${config.key-db.queue.pending-registration-payments.producer-timeout-ms}") long publisherTimeoutInMs,
                                        RedisReactiveCommands<String, String> commands) {
         this.paymentsQueueName = paymentsQueueName;

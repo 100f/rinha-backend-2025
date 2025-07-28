@@ -13,14 +13,20 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
+
+import static dev.cemf.rinha_backend_2025.helper.JsonHelper.addRequestedAtFieldTo;
 
 @Component
 public class RegisterPaymentMessageConsumer {
 
-    private final String paymentsQueueName;
-    private final String registeredPaymentsQueueName;
+    private final String pendingRegistrationPaymentsKey;
+    private final String defaultRegisteredPaymentsByDateKey;
+    private final String fallbackRegisteredPaymentsByDateKey;
     private final int consumersAmount;
     private final int consumersConcurrencyFactor;
     private final RedisReactiveCommands<String, String> commands;
@@ -28,15 +34,17 @@ public class RegisterPaymentMessageConsumer {
     private final FallbackPaymentProcessorHttpClient fallbackPaymentProcessorHttpClient;
     private Disposable runningSubscription;
 
-    public RegisterPaymentMessageConsumer(@Value("${config.key-db.queue.pending-registration-payments.name}") String pendingRegistrationPaymentsQueue,
-                                          @Value("${config.key-db.queue.registered-payments.name}") String registeredPaymentsQueue,
+    public RegisterPaymentMessageConsumer(@Value("${config.key-db.queue.pending-registration-payments.key}") String pendingRegistrationPaymentsQueue,
+                                          @Value("${config.key-db.set.payments-by-date.key.default}") String defaultRegisteredPaymentsByDateKey,
+                                          @Value("${config.key-db.set.payments-by-date.key.fallback}") String fallbackRegisteredPaymentsByDateKey,
                                           @Value("${config.key-db.queue.pending-registration-payments.consumers-amount}") int consumersAmount,
                                           @Value("${config.key-db.queue.pending-registration-payments.consumers-concurrency-factor}") int consumersConcurrencyFactor,
                                           DefaultPaymentProcessorHttpClient defaultPaymentProcessorHttpClient,
                                           FallbackPaymentProcessorHttpClient fallbackPaymentProcessorHttpClient,
                                           RedisReactiveCommands<String, String> commands) {
-        this.paymentsQueueName = pendingRegistrationPaymentsQueue;
-        this.registeredPaymentsQueueName = registeredPaymentsQueue;
+        this.pendingRegistrationPaymentsKey = pendingRegistrationPaymentsQueue;
+        this.defaultRegisteredPaymentsByDateKey = defaultRegisteredPaymentsByDateKey;
+        this.fallbackRegisteredPaymentsByDateKey = fallbackRegisteredPaymentsByDateKey;
         this.consumersAmount = consumersAmount;
         this.consumersConcurrencyFactor = consumersConcurrencyFactor;
         this.defaultPaymentProcessorHttpClient = defaultPaymentProcessorHttpClient;
@@ -54,26 +62,29 @@ public class RegisterPaymentMessageConsumer {
     private Flux<Void> createPaymentsProcessingPipeline() {
         return Flux.interval(Duration.of(100, ChronoUnit.MILLIS))
                 .publishOn(Schedulers.boundedElastic()) // bloqueantes
-                .concatMap(t -> commands.rpop(paymentsQueueName), consumersConcurrencyFactor)
+                .concatMap(t -> commands.rpop(pendingRegistrationPaymentsKey), consumersConcurrencyFactor)
                 .filter(Objects::nonNull)
                 .flatMap(this::doProcessPayment, consumersAmount)
                 .subscribeOn(Schedulers.parallel()); // cpu-bound
     }
 
-    private Mono<Void> doProcessPayment(String paymentJson) {
-        return defaultPaymentProcessorHttpClient.registerPayment(paymentJson)
-                .then(sendToRegisteredPaymentsQueue(paymentJson))
-                .onErrorResume(ignored -> fallbackPaymentProcessorHttpClient.registerPayment(paymentJson)
-                        .then(sendToRegisteredPaymentsQueue(paymentJson))
-                        .onErrorResume(ignoredFallback -> requeue(paymentJson)));
+
+    private Mono<Void> doProcessPayment(String originalPaymentJson) {
+        final var timestampedPaymentJson = addRequestedAtFieldTo(originalPaymentJson);
+        System.out.println(timestampedPaymentJson);
+        return defaultPaymentProcessorHttpClient.registerPayment(timestampedPaymentJson)
+                .then(indexPayment(timestampedPaymentJson, defaultRegisteredPaymentsByDateKey))
+                .onErrorResume(ignored -> fallbackPaymentProcessorHttpClient.registerPayment(timestampedPaymentJson)
+                        .then(indexPayment(timestampedPaymentJson, fallbackRegisteredPaymentsByDateKey))
+                        .onErrorResume(ignoredFallback -> requeue(originalPaymentJson)));
+    }
+
+    private Mono<Void> indexPayment(String paymentJson, String key) {
+        return commands.lpush(key, paymentJson).then();
     }
 
     private Mono<Void> requeue(String paymentJson) {
-        return commands.lpush(paymentsQueueName, paymentJson).then();
-    }
-
-    private Mono<Void> sendToRegisteredPaymentsQueue(String paymentJson) {
-        return commands.lpush(registeredPaymentsQueueName, paymentJson).then();
+        return commands.lpush(pendingRegistrationPaymentsKey, paymentJson).then();
     }
 
     @PreDestroy

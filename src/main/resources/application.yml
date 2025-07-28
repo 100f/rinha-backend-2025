@@ -12,11 +12,14 @@ http:
 config:
   key-db:
     uri: redis://key-db:6379
+    set:
+      payments-by-date:
+        key:
+          default: default-registered-payments:by_date
+          fallback: fallback-registered-payments:by_date
     queue:
       pending-registration-payments:
-        name: pending-registration-payments
+        key: pending-registration-payments
         consumers-amount: ${CONSUMERS_AMOUNT:20}
         consumers-concurrency-factor: ${CONSUMERS_CONCURRENCY_FACTOR:1}
         producer-timeout-ms: ${PRODUCER_TIMEOUT_MS:5000}
-      registered-payments:
-        name: registered-payments
