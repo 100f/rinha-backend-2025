@@ -1,5 +1,6 @@
 package dev.cemf.rinha_backend_2025.consumer;
 
+import dev.cemf.rinha_backend_2025.dto.Payment;
 import dev.cemf.rinha_backend_2025.http.client.DefaultPaymentProcessorHttpClient;
 import dev.cemf.rinha_backend_2025.http.client.FallbackPaymentProcessorHttpClient;
 import io.lettuce.core.api.reactive.RedisReactiveCommands;
@@ -15,8 +16,10 @@ import reactor.core.scheduler.Schedulers;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static dev.cemf.rinha_backend_2025.helper.JsonHelper.addRequestedAtFieldTo;
+import static dev.cemf.rinha_backend_2025.helper.JsonHelper.parsePayment;
 
 @Component
 public class RegisterPaymentMessageConsumer {
@@ -70,13 +73,24 @@ public class RegisterPaymentMessageConsumer {
         final var timestampedPaymentJson = addRequestedAtFieldTo(originalPaymentJson);
         return defaultPaymentProcessorHttpClient.registerPayment(timestampedPaymentJson)
                 .then(indexPayment(timestampedPaymentJson, defaultRegisteredPaymentsByDateKey))
-                .onErrorResume(ignored -> fallbackPaymentProcessorHttpClient.registerPayment(timestampedPaymentJson)
-                        .then(indexPayment(timestampedPaymentJson, fallbackRegisteredPaymentsByDateKey))
-                        .onErrorResume(ignoredFallback -> requeue(originalPaymentJson)));
+                .onErrorResume(ignoredDefaultEx -> fallbackPaymentProcessorHttpClient.registerPayment(timestampedPaymentJson)
+                            .then(indexPayment(timestampedPaymentJson, fallbackRegisteredPaymentsByDateKey))
+                            .onErrorResume(ignoredFallbackEx -> requeue(originalPaymentJson))
+                );
     }
 
-    private Mono<Void> indexPayment(String paymentJson, String key) {
-        return commands.lpush(key, paymentJson).then();
+    private Mono<Void> indexPayment(String timestampedPaymentJson, String key) {
+        return Mono.fromCallable(() -> parsePayment(timestampedPaymentJson))
+                .flatMap(doIndexPayment(key))
+                .then();
+    }
+
+    private Function<Payment, Mono<? extends Long>> doIndexPayment(String key) {
+        return payment -> commands.zadd(
+                key,
+                payment.requestedAt().toEpochMilli(),
+                String.format("%s:%s", payment.amount(), payment.correlationId())
+        );
     }
 
     private Mono<Void> requeue(String paymentJson) {

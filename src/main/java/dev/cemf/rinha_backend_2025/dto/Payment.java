@@ -1,6 +1,10 @@
 package dev.cemf.rinha_backend_2025.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
-public record Payment(String correlationId, BigDecimal amount, LocalDateTime requestedAt) {}
+/*
+ * Usado para indexação via sorted set (ZSET)
+ */
+public record Payment(Instant requestedAt, BigDecimal amount, String correlationId) {
+}

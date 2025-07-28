@@ -1,7 +1,6 @@
 package dev.cemf.rinha_backend_2025.http.client;
 
 
-import dev.cemf.rinha_backend_2025.dto.Payment;
 import dev.cemf.rinha_backend_2025.dto.PaymentProcessorHealthResponse;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestBody;
