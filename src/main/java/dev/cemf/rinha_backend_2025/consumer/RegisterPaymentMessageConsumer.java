@@ -68,7 +68,6 @@ public class RegisterPaymentMessageConsumer {
 
     private Mono<Void> doProcessPayment(String originalPaymentJson) {
         final var timestampedPaymentJson = addRequestedAtFieldTo(originalPaymentJson);
-        System.out.println(timestampedPaymentJson);
         return defaultPaymentProcessorHttpClient.registerPayment(timestampedPaymentJson)
                 .then(indexPayment(timestampedPaymentJson, defaultRegisteredPaymentsByDateKey))
                 .onErrorResume(ignored -> fallbackPaymentProcessorHttpClient.registerPayment(timestampedPaymentJson)
