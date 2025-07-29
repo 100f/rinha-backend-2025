@@ -22,4 +22,5 @@ config:
         key: pending-registration-payments
         consumers-amount: ${CONSUMERS_AMOUNT:20}
         consumers-concurrency-factor: ${CONSUMERS_CONCURRENCY_FACTOR:1}
+        pipeline-polling-rate-ms: ${PIPELINE_POLLING_MS:100}
         producer-timeout-ms: ${PRODUCER_TIMEOUT_MS:5000}

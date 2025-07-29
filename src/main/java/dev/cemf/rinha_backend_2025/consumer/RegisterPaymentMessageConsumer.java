@@ -29,6 +29,7 @@ public class RegisterPaymentMessageConsumer {
     private final String fallbackRegisteredPaymentsByDateKey;
     private final int consumersAmount;
     private final int consumersConcurrencyFactor;
+    private final long pipelinePollingRateInMs;
     private final RedisReactiveCommands<String, String> commands;
     private final DefaultPaymentProcessorHttpClient defaultPaymentProcessorHttpClient;
     private final FallbackPaymentProcessorHttpClient fallbackPaymentProcessorHttpClient;
@@ -39,6 +40,7 @@ public class RegisterPaymentMessageConsumer {
                                           @Value("${config.key-db.set.payments-by-date.key.fallback}") String fallbackRegisteredPaymentsByDateKey,
                                           @Value("${config.key-db.queue.pending-registration-payments.consumers-amount}") int consumersAmount,
                                           @Value("${config.key-db.queue.pending-registration-payments.consumers-concurrency-factor}") int consumersConcurrencyFactor,
+                                          @Value("${config.key-db.queue.pending-registration-payments.pipeline-polling-rate-ms}") long pipelinePollingRateInMs,
                                           DefaultPaymentProcessorHttpClient defaultPaymentProcessorHttpClient,
                                           FallbackPaymentProcessorHttpClient fallbackPaymentProcessorHttpClient,
                                           RedisReactiveCommands<String, String> commands) {
@@ -47,6 +49,7 @@ public class RegisterPaymentMessageConsumer {
         this.fallbackRegisteredPaymentsByDateKey = fallbackRegisteredPaymentsByDateKey;
         this.consumersAmount = consumersAmount;
         this.consumersConcurrencyFactor = consumersConcurrencyFactor;
+        this.pipelinePollingRateInMs = pipelinePollingRateInMs;
         this.defaultPaymentProcessorHttpClient = defaultPaymentProcessorHttpClient;
         this.fallbackPaymentProcessorHttpClient = fallbackPaymentProcessorHttpClient;
         this.commands = commands;
@@ -60,7 +63,7 @@ public class RegisterPaymentMessageConsumer {
     }
 
     private Flux<Void> createPaymentsProcessingPipeline() {
-        return Flux.interval(Duration.of(100, ChronoUnit.MILLIS))
+        return Flux.interval(Duration.of(pipelinePollingRateInMs, ChronoUnit.MILLIS))
                 .publishOn(Schedulers.boundedElastic()) // bloqueantes
                 .concatMap(t -> commands.rpop(pendingRegistrationPaymentsKey), consumersConcurrencyFactor)
                 .filter(Objects::nonNull)
