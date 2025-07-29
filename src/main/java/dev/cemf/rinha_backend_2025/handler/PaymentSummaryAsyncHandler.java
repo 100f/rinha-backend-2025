@@ -1,6 +1,6 @@
 package dev.cemf.rinha_backend_2025.handler;
 
-import dev.cemf.rinha_backend_2025.dto.PaymentSummaryResponse;
+import dev.cemf.rinha_backend_2025.dto.PaymentProcessorSummary;
 import io.lettuce.core.Range;
 import io.lettuce.core.api.reactive.RedisReactiveCommands;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.Map;
 
 @Component
 public class PaymentSummaryAsyncHandler implements HandlerFunction<ServerResponse> {
@@ -40,29 +41,37 @@ public class PaymentSummaryAsyncHandler implements HandlerFunction<ServerRespons
                     final var from = tuple.getT1();
                     final var to = tuple.getT2();
                     final var range = Range.create(from, to);
-                    return commands.zrangebyscoreWithScores(defaultRegisteredPaymentsByDateKey, range)
-                            .collectList()
-                            .flatMap(entries -> {
-                                var totalAmount = BigDecimal.ZERO;
-                                var processedPayments = 0L;
-                                for (final var entry : entries) {
-                                    final var value = entry.getValue();
-                                    final var colonPos = value.indexOf(":");
-                                    if (colonPos > 0) {
-                                        try {
-                                            totalAmount = totalAmount.add(new BigDecimal(value.substring(0, colonPos)));
-                                            processedPayments++;
-                                        }
-                                        catch (NumberFormatException ignored) {}
-                                    }
-                                }
-                                return ServerResponse.ok().bodyValue(new PaymentSummaryResponse(processedPayments, totalAmount));
-                            });
+                    final var defaultSummary = getProcessorSummary(defaultRegisteredPaymentsByDateKey, range);
+                    final var fallbackSummary = getProcessorSummary(fallbackRegisteredPaymentsByDateKey, range);
+                    return Mono.zip(defaultSummary, fallbackSummary)
+                            .map(summaryTuple -> Map.of("default", summaryTuple.getT1(), "fallback", summaryTuple.getT2()))
+                            .flatMap(paymentsSummary -> ServerResponse.ok().bodyValue(paymentsSummary));
                 })
                 .onErrorResume(DateTimeParseException.class, ignored ->
                         ServerResponse.badRequest().bodyValue("Formato de data inválido."))
                 .onErrorResume(ignored ->
                         ServerResponse.status(500).bodyValue("Erro interno desconhecido."));
+    }
+
+    private Mono<PaymentProcessorSummary> getProcessorSummary(String key, Range<Long> range) {
+        return commands.zrangebyscore(key, range)
+                .collectList()
+                .map(entries -> {
+                    var totalAmount = BigDecimal.ZERO;
+                    var processedPayments = 0L;
+                    for (final var entry : entries) {
+                        final var colonPos = entry.indexOf(":");
+                        if (colonPos > 0) {
+                            try {
+                                totalAmount = totalAmount.add(new BigDecimal(entry.substring(0, colonPos)));
+                                processedPayments++;
+                            }
+                            catch (NumberFormatException ignored) {}
+                        }
+                    }
+                    return new PaymentProcessorSummary(processedPayments, totalAmount);
+                })
+                .defaultIfEmpty(new PaymentProcessorSummary(0L, BigDecimal.ZERO));
     }
 
     private Mono<Long> parseParamToMillis(ServerRequest request, String field, long defaultValue) {
