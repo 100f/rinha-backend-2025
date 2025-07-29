@@ -1,16 +1,76 @@
 package dev.cemf.rinha_backend_2025.handler;
 
+import dev.cemf.rinha_backend_2025.dto.PaymentSummaryResponse;
+import io.lettuce.core.Range;
+import io.lettuce.core.api.reactive.RedisReactiveCommands;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.HandlerFunction;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
+
 @Component
 public class PaymentSummaryAsyncHandler implements HandlerFunction<ServerResponse> {
 
+    private final RedisReactiveCommands<String, String> commands;
+    private final String defaultRegisteredPaymentsByDateKey;
+    private final String fallbackRegisteredPaymentsByDateKey;
+
+    public PaymentSummaryAsyncHandler(@Value("${config.key-db.set.payments-by-date.key.default}") String defaultRegisteredPaymentsByDateKey,
+                                      @Value("${config.key-db.set.payments-by-date.key.fallback}") String fallbackRegisteredPaymentsByDateKey,
+                                      RedisReactiveCommands<String, String> commands) {
+        this.defaultRegisteredPaymentsByDateKey = defaultRegisteredPaymentsByDateKey;
+        this.fallbackRegisteredPaymentsByDateKey = fallbackRegisteredPaymentsByDateKey;
+        this.commands = commands;
+    }
+
     @Override
     public Mono<ServerResponse> handle(ServerRequest request) {
-        return ServerResponse.accepted().build();
+        final var fromMono = parseParamToMillis(request, "from", 0L);
+        final var toMono = parseParamToMillis(request, "to", Long.MAX_VALUE);
+        return Mono.zip(fromMono, toMono)
+                .flatMap(tuple -> {
+                    final var from = tuple.getT1();
+                    final var to = tuple.getT2();
+                    final var range = Range.create(from, to);
+                    return commands.zrangebyscoreWithScores(defaultRegisteredPaymentsByDateKey, range)
+                            .collectList()
+                            .flatMap(entries -> {
+                                var totalAmount = BigDecimal.ZERO;
+                                var processedPayments = 0L;
+                                for (final var entry : entries) {
+                                    final var value = entry.getValue();
+                                    final var colonPos = value.indexOf(":");
+                                    if (colonPos > 0) {
+                                        try {
+                                            totalAmount = totalAmount.add(new BigDecimal(value.substring(0, colonPos)));
+                                            processedPayments++;
+                                        }
+                                        catch (NumberFormatException ignored) {}
+                                    }
+                                }
+                                return ServerResponse.ok().bodyValue(new PaymentSummaryResponse(processedPayments, totalAmount));
+                            });
+                })
+                .onErrorResume(DateTimeParseException.class, ignored ->
+                        ServerResponse.badRequest().bodyValue("Formato de data inválido."))
+                .onErrorResume(ignored ->
+                        ServerResponse.status(500).bodyValue("Erro interno desconhecido."));
+    }
+
+    private Mono<Long> parseParamToMillis(ServerRequest request, String field, long defaultValue) {
+        return Mono.fromCallable(() -> request.queryParam(field)
+                .map(Instant::parse)
+                .map(instant -> instant.atZone(ZoneOffset.UTC))
+                .map(ZonedDateTime::toInstant)
+                .map(Instant::toEpochMilli)
+                .orElse(defaultValue));
     }
 }
