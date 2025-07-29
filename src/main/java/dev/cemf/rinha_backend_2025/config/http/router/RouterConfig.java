@@ -16,7 +16,7 @@ public class RouterConfig {
                                                     PaymentSummaryAsyncHandler paymentSummaryAsyncHandler) {
         return RouterFunctions.route()
                 .POST("/payments", registerPaymentAsyncHandler)
-                .GET("/payment-summary", paymentSummaryAsyncHandler)
+                .GET("/payments-summary", paymentSummaryAsyncHandler)
                 .build();
     }
 }
