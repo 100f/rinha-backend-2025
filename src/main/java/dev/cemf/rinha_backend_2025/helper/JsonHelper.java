@@ -16,7 +16,7 @@ public class JsonHelper {
                 .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         int lastBraceIndex = paymentJson.lastIndexOf('}');
         if (lastBraceIndex < 0) {
-            throw new IllegalArgumentException("Invalid JSON format: " + paymentJson);
+            throw new IllegalArgumentException("Formato JSON inválido: " + paymentJson);
         }
         return paymentJson.substring(0, lastBraceIndex)
                 + ",\"requestedAt\":\"" + timestamp + "\""
