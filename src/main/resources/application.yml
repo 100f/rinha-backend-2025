@@ -7,8 +7,10 @@ http:
   config:
     default-payment-processor:
       base-url: http://payment-processor-default:8080
+      response-timeout-ms: ${PAYMENT_PROCESSOR_RESPONSE_TIMEOUT_MS:5000}
     fallback-payment-processor:
       base-url: http://payment-processor-fallback:8080
+      response-timeout-ms: ${PAYMENT_PROCESSOR_RESPONSE_TIMEOUT_MS:5000}
 config:
   key-db:
     uri: redis://key-db:6379

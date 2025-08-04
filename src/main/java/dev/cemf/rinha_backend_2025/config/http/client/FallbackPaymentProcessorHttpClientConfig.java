@@ -8,8 +8,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class FallbackPaymentProcessorHttpClientConfig extends AbstractPaymentProcessorHttpClientConfig {
 
-    public FallbackPaymentProcessorHttpClientConfig(@Value("${http.config.fallback-payment-processor.base-url}") String baseUrl) {
-        super(baseUrl);
+    public FallbackPaymentProcessorHttpClientConfig(@Value("${http.config.fallback-payment-processor.base-url}") String baseUrl,
+                                                    @Value("${http.config.fallback-payment-processor.response-timeout-ms}") long responseTimeoutMs) {
+        super(baseUrl, responseTimeoutMs);
     }
 
     @Bean

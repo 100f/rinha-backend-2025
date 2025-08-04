@@ -9,8 +9,9 @@ import reactor.netty.http.client.HttpClient;
 @Configuration
 public class DefaultPaymentProcessorHttpClientConfig extends AbstractPaymentProcessorHttpClientConfig {
 
-    public DefaultPaymentProcessorHttpClientConfig(@Value("${http.config.default-payment-processor.base-url}") String baseUrl) {
-        super(baseUrl);
+    public DefaultPaymentProcessorHttpClientConfig(@Value("${http.config.default-payment-processor.base-url}") String baseUrl,
+                                                   @Value("${http.config.default-payment-processor.response-timeout-ms}") long responseTimeoutMs) {
+        super(baseUrl, responseTimeoutMs);
     }
 
     @Bean
