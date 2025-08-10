@@ -12,8 +12,4 @@ public non-sealed interface DefaultPaymentProcessorHttpClient extends AbstractPa
 
     @PostExchange(value = "/payments", contentType = MediaType.APPLICATION_JSON_VALUE)
     Mono<Void> registerPayment(@RequestBody String paymentJson);
-
-    @GetExchange("/payments/service-health")
-    Mono<PaymentProcessorHealthResponse> health();
-
 }

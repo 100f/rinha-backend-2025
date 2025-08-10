@@ -11,7 +11,4 @@ public non-sealed interface FallbackPaymentProcessorHttpClient extends AbstractP
 
     @PostExchange(value = "/payments", contentType = MediaType.APPLICATION_JSON_VALUE)
     Mono<Void> registerPayment(@RequestBody String payment);
-
-    @GetExchange("/payments/service-health")
-    PaymentProcessorHealthResponse health();
 }

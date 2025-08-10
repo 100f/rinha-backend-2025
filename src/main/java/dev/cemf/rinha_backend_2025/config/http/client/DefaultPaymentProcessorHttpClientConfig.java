@@ -10,8 +10,10 @@ import reactor.netty.http.client.HttpClient;
 public class DefaultPaymentProcessorHttpClientConfig extends AbstractPaymentProcessorHttpClientConfig {
 
     public DefaultPaymentProcessorHttpClientConfig(@Value("${http.config.default-payment-processor.base-url}") String baseUrl,
-                                                   @Value("${http.config.default-payment-processor.response-timeout-ms}") long responseTimeoutMs) {
-        super(baseUrl, responseTimeoutMs);
+                                                   @Value("${http.config.response-timeout-ms}") long responseTimeoutMs,
+                                                   @Value("${http.config.max-connections}") int maxConnections,
+                                                   @Value("${http.config.connection-acquire-timeout-ms}") long connectionAcquireTimeoutInMs) {
+        super(baseUrl, responseTimeoutMs, maxConnections, connectionAcquireTimeoutInMs);
     }
 
     @Bean

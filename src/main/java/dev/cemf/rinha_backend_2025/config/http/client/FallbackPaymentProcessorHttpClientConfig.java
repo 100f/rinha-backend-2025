@@ -9,8 +9,10 @@ import org.springframework.context.annotation.Configuration;
 public class FallbackPaymentProcessorHttpClientConfig extends AbstractPaymentProcessorHttpClientConfig {
 
     public FallbackPaymentProcessorHttpClientConfig(@Value("${http.config.fallback-payment-processor.base-url}") String baseUrl,
-                                                    @Value("${http.config.fallback-payment-processor.response-timeout-ms}") long responseTimeoutMs) {
-        super(baseUrl, responseTimeoutMs);
+                                                    @Value("${http.config.response-timeout-ms}") long responseTimeoutMs,
+                                                    @Value("${http.config.max-connections}") int maxConnections,
+                                                    @Value("${http.config.connection-acquire-timeout-ms}") long connectionAcquireTimeoutInMs) {
+        super(baseUrl, responseTimeoutMs, maxConnections, connectionAcquireTimeoutInMs);
     }
 
     @Bean
