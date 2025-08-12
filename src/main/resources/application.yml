@@ -1,5 +1,5 @@
 server:
-  port: 9999
+  port: 8054
 spring:
   application:
     name: rinha-backend-2025

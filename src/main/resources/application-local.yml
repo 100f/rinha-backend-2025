@@ -1,3 +1,5 @@
+server:
+  port: 9999
 http:
   config:
     default-payment-processor:
