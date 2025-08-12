@@ -15,4 +15,4 @@ COPY --from=build /app/target/rinha-backend-2025 /app/rinha-backend-2025
 
 EXPOSE 8054
 
-ENTRYPOINT ["top", "-b"]
+ENTRYPOINT ["/app/rinha-backend-2025"]

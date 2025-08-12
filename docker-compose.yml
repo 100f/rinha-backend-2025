@@ -1,11 +1,23 @@
 x-api-conf: &api-conf
   image: #TODO
   environment:
-    - CONSUMERS_AMOUNT=20
-    - CONSUMERS_CONCURRENCY_FACTOR=1
-    - PIPELINE_POLLING_MS=100
-    - PRODUCER_TIMEOUT_MS=5000
-    - RESPONSE_TIMEOUT_MS=5000
+    CONSUMERS_AMOUNT: 20
+    CONSUMERS_CONCURRENCY_FACTOR: 8192
+    PAYMENT_PROCESSOR_RESPONSE_TIMEOUT_MS: 4000
+    PIPELINE_POLLING_MS: 50
+    CONNECTION_ACQUIRE_TIMEOUT_MS: 5000
+    MAX_CONNECTIONS: 500
+    JAVA_OPTS: >
+      -XX:+UseG1GC
+      -XX:+AlwaysPreTouch
+      -XX:+UseNUMA
+      -XX:+UseFastAccessorMethods
+      -XX:+UseStringCache
+      -XX:+OptimizeStringConcat
+      -Dio.netty.allocator.type=pooled
+      -Dreactor.schedulers.defaultBoundedElasticQueueSize=200000
+      -Dreactor.schedulers.defaultBoundedElasticOnVirtualThreads=true
+      -Dreactor.schedulers.defaultBoundedElasticSize=1024
   networks:
     - backend
     - payment-processor
