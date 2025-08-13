@@ -1,0 +1,62 @@
+name: Publish New Image Version
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*.*.*'
+
+env:
+  REGISTRY: ghrc.io
+  IMAGE_NAME: ${{ github.repository_owner }}/rinha-backend-2025
+  MAVEN_PROFILE: "native"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-
+
+      - name: Auth to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Docker Tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=sha
+          type=semver, pattern={{version}}
+          type=semver, pattern={{major}}.{{minor}}
+          type=ref, event=branch
+
+      - name: Docker Publish
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            MAVEN_PROFILE=${{ env.MAVEN_PROFILE }}
+
