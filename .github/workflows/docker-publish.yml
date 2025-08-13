@@ -30,6 +30,16 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2-
 
+      - name: Setup Docker Buildx # Step necessário pois contém driver para o cache que escolhi: GHA
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          buildkitd-config-inline: |
+            [worker.oci]
+              enabled = false
+            [worker.containerd]
+              enabled = true
+
       - name: Auth to GHCR
         uses: docker/login-action@v3
         with:
