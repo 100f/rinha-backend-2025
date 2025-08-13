@@ -8,7 +8,7 @@ on:
       - '*.*.*'
 
 env:
-  REGISTRY: ghrc.io
+  REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/rinha-backend-2025
   MAVEN_PROFILE: "native"
 
