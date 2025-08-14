@@ -13,9 +13,12 @@ RUN mvn clean package -Pnative
 
 FROM alpine:3.20 AS prod
 
+RUN apk add --no-cache libstdc++ gcompat
+
 WORKDIR /app
 
 COPY --from=build /app/target/rinha-backend-2025 /app/rinha-backend-2025
+RUN chmod +x /app/rinha-backend-2025
 
 EXPOSE 8054
 
