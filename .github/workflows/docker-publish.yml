@@ -12,6 +12,10 @@ env:
   IMAGE_NAME: ${{ github.repository_owner }}/rinha-backend-2025
   MAVEN_PROFILE: "native"
 
+strategy:
+  matrix:
+    platform: [linux/amd64, linux/arm64]
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -29,13 +33,15 @@ jobs:
           path: | 
             ~/.m2/repository
             target
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2-
+            ~/.graalvm
+            /tmp/graalvm
+          key: ${{ runner.os }}-fullcache-${{ hashFiles('**/pom.xml') }}
 
       - name: Setup Docker Buildx # Step necessário pois contém driver para o cache que escolhi: GHA
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker-container
+          install: true
 
       - name: Auth to GHCR
         uses: docker/login-action@v3
@@ -55,6 +61,15 @@ jobs:
             type=semver, pattern={{major}}.{{minor}}
             type=ref, event=branch
 
+      - name: Build Native Executable
+        run: |
+          docker buildx build \
+            --target build \
+            --tag temp-build-image \
+            --load \
+            --build-arg MAVEN_PROFILE=${{ env.MAVEN_PROFILE }} \
+            .
+
       - name: Docker Publish
         uses: docker/build-push-action@v5
         with:
@@ -62,7 +77,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platform }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |

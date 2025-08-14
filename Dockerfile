@@ -6,9 +6,9 @@ RUN microdnf install maven -y && \
 WORKDIR /app
 
 COPY pom.xml .
-RUN mvn dependency:go-offline -Pnative
-
 COPY src ./src
+
+RUN mvn dependency:go-offline -Pnative
 RUN mvn clean package -Pnative
 
 FROM alpine:3.20 AS prod
