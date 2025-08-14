@@ -1,10 +1,14 @@
 FROM ghcr.io/graalvm/native-image-community:21 AS build
 
+RUN microdnf install maven -y && \
+    mkdir -p /root/.m2
+
 WORKDIR /app
 
 COPY pom.xml .
-COPY src ./src
+RUN mvn dependency:go-offline -Pnative
 
+COPY src ./src
 RUN mvn clean package -Pnative
 
 FROM alpine:3.20 AS prod
