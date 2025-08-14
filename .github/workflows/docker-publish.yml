@@ -12,13 +12,12 @@ env:
   IMAGE_NAME: ${{ github.repository_owner }}/rinha-backend-2025
   MAVEN_PROFILE: "native"
 
-strategy:
-  matrix:
-    platform: [linux/amd64, linux/arm64]
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [ linux/amd64, linux/arm64 ]
     permissions:
       contents: read
       packages: write
