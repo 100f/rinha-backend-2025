@@ -1,0 +1,18 @@
+[
+  {
+    "interfaces": [
+      "dev.cemf.rinha_backend_2025.http.client.DefaultPaymentProcessorHttpClient",
+      "org.springframework.aop.SpringProxy",
+      "org.springframework.aop.framework.Advised",
+      "org.springframework.core.DecoratingProxy"
+    ]
+  },
+  {
+    "interfaces": [
+      "dev.cemf.rinha_backend_2025.http.client.FallbackPaymentProcessorHttpClient",
+      "org.springframework.aop.SpringProxy",
+      "org.springframework.aop.framework.Advised",
+      "org.springframework.core.DecoratingProxy"
+    ]
+  }
+]
