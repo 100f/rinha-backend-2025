@@ -16,6 +16,12 @@ O lucro é calculado pela quantidade de pagamentos processados, onde cada pagame
 
 ## ⚙️ Como subir
 
+Clone o projeto: 
+
+```shell 
+  git clone https://github.com/100f/rinha-backend-2025.git
+```
+
 Abaixo um exemplo de arquivo `.env` para ser colocado na raíz.
 
 ```env
@@ -30,6 +36,7 @@ Abaixo um exemplo de arquivo `.env` para ser colocado na raíz.
 
 Considerações: 
 - Qualquer perfil do Spring que não seja `local` necessita de estadia na mesma rede interna Docker dos outros elementos via `docker-compose.yml`;
+- É **vital** que os payment-processors estejam rodando localmente na máquina. Refira a [https://github.com/zanfranceschi/rinha-de-backend-2025](https://github.com/zanfranceschi/rinha-de-backend-2025) no arquivo de instruções para mais informações (inclusive gerais sobre o desafio);
 - Necessita de uma instância de KeyDB em sua porta padrão (`6379`) localmente;
 - A única variável ambiente realmente obrigatória é a de perfil do Spring (primeira do .env exemplo);
 
