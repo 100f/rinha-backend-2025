@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>dev.cemf</groupId>
 	<artifactId>rinha-backend-2025</artifactId>
-	<version>1.0.3</version>
+	<version>1.0.4</version>
 	<name>rinha-backend-2025</name>
 	<description>Rinha de Backend 2025</description>
 	<properties>
