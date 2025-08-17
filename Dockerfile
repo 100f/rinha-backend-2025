@@ -9,7 +9,7 @@ COPY pom.xml .
 RUN mvn -B -q dependency:go-offline -Pnative
 
 COPY src ./src
-RUN mvn clean package -Dspring.aot.enabled=true
+RUN mvn clean package -Dspring.aot.enabled=true -Pnative
 
 FROM alpine:3.20 AS prod
 
