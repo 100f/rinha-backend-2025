@@ -28,9 +28,32 @@
 			<version>6.7.1.RELEASE</version>
 		</dependency>
 	</dependencies>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>graalvm-reachability-metadata</artifactId>
+                <version>${native.maven.plugin.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
-	<build>
+
+    <build>
 		<plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>process-aot</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 			<plugin>
 				<groupId>org.graalvm.buildtools</groupId>
 				<artifactId>native-maven-plugin</artifactId>
@@ -40,19 +63,19 @@
 					<execution>
 						<id>build-native</id>
 						<goals>
-							<goal>compile-no-fork</goal>
+							<goal>compile</goal>
 						</goals>
 						<phase>package</phase>
 					</execution>
 				</executions>
 				<configuration>
 					<mainClass>dev.cemf.rinha_backend_2025.RinhaBackend2025Application</mainClass>
+                    <buildArgs>
+                        <buildArg>--initialize-at-build-time=dev.cemf.rinha_backend_2025.config.keydb.KeyDbConfig</buildArg>
+                    </buildArgs>
 				</configuration>
 			</plugin>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
+
 		</plugins>
 	</build>
 </project>

@@ -1,15 +1,15 @@
 FROM ghcr.io/graalvm/native-image-community:21 AS build
 
-RUN microdnf install maven -y && \
-    mkdir -p /root/.m2
+RUN microdnf install -y maven && microdnf clean all && mkdir -p /root/.m2
+
 
 WORKDIR /app
 
 COPY pom.xml .
-COPY src ./src
+RUN mvn -B -q dependency:go-offline -Pnative
 
-RUN mvn dependency:go-offline -Pnative
-RUN mvn clean package -Pnative
+COPY src ./src
+RUN mvn clean package -Dspring.aot.enabled=true
 
 FROM alpine:3.20 AS prod
 
